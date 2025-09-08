@@ -1,155 +1,4 @@
-// import React, { useState, useEffect, useRef } from 'react';
-// import axios from 'axios';
-// import { FaMicrophone, FaStop, FaVolumeUp, FaPaperPlane } from 'react-icons/fa';
-// import './Chatbot.css';
 
-// const Chatbot = () => {
-//   const [messages, setMessages] = useState([]);
-//   const [input, setInput] = useState('');
-//   const [isListening, setIsListening] = useState(false);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const messagesEndRef = useRef(null);
-
-//   // ✅ Your actual Gemini API Key (keep this private in production)
-//   const GEMINI_API_KEY = "AIzaSyAseQNB9hMgd8tZC4H16O7iaPDTR_bGfuE";
-
-//   const MODEL_NAME = "models/gemini-1.5-flash"; // You can also try: "models/gemini-1.5-pro"
-//   const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
-
-//   const scrollToBottom = () => {
-//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-//   };
-
-//   useEffect(() => {
-//     scrollToBottom();
-//   }, [messages]);
-
-//   const speakText = (text) => {
-//     if ('speechSynthesis' in window) {
-//       const utterance = new SpeechSynthesisUtterance(text);
-//       utterance.rate = 1.0;
-//       utterance.pitch = 1.0;
-//       window.speechSynthesis.speak(utterance);
-//     }
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     if (!input.trim()) return;
-
-//     const userMessage = { text: input, sender: 'user' };
-//     setMessages(prev => [...prev, userMessage]);
-//     setInput('');
-//     setIsLoading(true);
-
-//     try {
-//       const response = await axios.post(
-//         GEMINI_API_URL,
-//         {
-//           contents: [
-//             {
-//               role: "user",
-//               parts: [{ text: input }]
-//             }
-//           ]
-//         },
-//         {
-//           headers: { 'Content-Type': 'application/json' }
-//         }
-//       );
-
-//       const botText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-//                     || "Sorry, I couldn't generate a response.";
-
-//       const botMessage = { text: botText, sender: 'bot' };
-//       setMessages(prev => [...prev, botMessage]);
-//       speakText(botText);
-
-//     } catch (err) {
-//       console.error("Gemini API error", err);
-//       const errMsg = err.response?.data?.error?.message || "An error occurred. Please try again.";
-//       setMessages(prev => [...prev, { text: errMsg, sender: 'bot' }]);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   const handleVoiceInput = () => {
-//     if (!('webkitSpeechRecognition' in window)) {
-//       alert("Speech recognition not supported");
-//       return;
-//     }
-
-//     const recognition = new window.webkitSpeechRecognition();
-//     recognition.continuous = false;
-//     recognition.interimResults = false;
-
-//     if (isListening) {
-//       recognition.stop();
-//       setIsListening(false);
-//       return;
-//     }
-
-//     recognition.onstart = () => setIsListening(true);
-//     recognition.onresult = (e) => {
-//       setInput(e.results[0][0].transcript);
-//       setIsListening(false);
-//     };
-//     recognition.onerror = () => setIsListening(false);
-//     recognition.onend = () => setIsListening(false);
-//     recognition.start();
-//   };
-
-//   const handleSpeakMessage = (text) => speakText(text);
-
-//   return (
-//     <div className="chatbot-container">
-//       <div className="chatbot-header">
-//         <h2>AI Assistant (Gemini 1.5 Flash)</h2>
-//       </div>
-
-//       <div className="chatbot-messages">
-//         {messages.map((msg, i) => (
-//           <div key={i} className={`message ${msg.sender}`}>
-//             {msg.text}
-//             {msg.sender === 'bot' && (
-//               <button className="speak-btn" onClick={() => handleSpeakMessage(msg.text)} title="Speak">
-//                 <FaVolumeUp />
-//               </button>
-//             )}
-//           </div>
-//         ))}
-//         {isLoading && (
-//           <div className="message bot">
-//             <div className="typing-indicator"><span></span><span></span><span></span></div>
-//           </div>
-//         )}
-//         <div ref={messagesEndRef} />
-//       </div>
-
-//       <form onSubmit={handleSubmit} className="chatbot-input">
-//         <input
-//           type="text"
-//           value={input}
-//           onChange={(e) => setInput(e.target.value)}
-//           placeholder="Type your message..."
-//         />
-//         <button
-//           type="button"
-//           onClick={handleVoiceInput}
-//           className={`voice-btn ${isListening ? 'listening' : ''}`}
-//         >
-//           {isListening ? <FaStop /> : <FaMicrophone />}
-//         </button>
-//         <button type="submit" disabled={!input.trim()}>
-//           <FaPaperPlane />
-//         </button>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default Chatbot;
 
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -263,7 +112,7 @@ const Chatbot = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h2 style={styles.headerText}>AI Assistant (Gemini 1.5 Flash)</h2>
+        <h2 style={styles.headerText}>CHATBOT</h2>
       </div>
 
       <div style={styles.messagesContainer}>
@@ -450,3 +299,14 @@ const styles = {
 };
 
 export default Chatbot;
+
+
+
+
+
+
+
+
+
+// mobile rsponsive 
+

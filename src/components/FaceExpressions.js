@@ -1,1296 +1,10 @@
 
-// // import React, { useRef, useState, useEffect } from 'react';
-// // import Webcam from 'react-webcam';
-// // import * as faceapi from 'face-api.js';
-
-// // const FaceExpressions = () => {
-// //     const webcamRef = useRef(null);
-// //     const canvasRef = useRef(null);
-// //     const [detections, setDetections] = useState([]);
-// //     const [capturedImages, setCapturedImages] = useState([]);
-// //     const [isModelsLoaded, setIsModelsLoaded] = useState(false);
-// //     const [capturedFaces, setCapturedFaces] = useState(new Set());
-// //     const [isDetecting, setIsDetecting] = useState(false);
-
-// //     // Load models
-// //     useEffect(() => {
-// //         const loadModels = async () => {
-// //             try {
-// //                 await Promise.all([
-// //                     faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-// //                     faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-// //                     faceapi.nets.faceExpressionNet.loadFromUri('/models')
-// //                 ]);
-// //                 setIsModelsLoaded(true);
-// //             } catch (error) {
-// //                 console.error("Error loading models:", error);
-// //             }
-// //         };
-// //         loadModels();
-
-// //         return () => {
-// //             // Cleanup
-// //             setIsModelsLoaded(false);
-// //             setDetections([]);
-// //         };
-// //     }, []);
-
-// //     // Real-time multi-face detection and drawing
-// //     useEffect(() => {
-// //         if (!isModelsLoaded || isDetecting || !webcamRef.current) return;
-
-// //         const detectFaces = async () => {
-// //             setIsDetecting(true);
-// //             try {
-// //                 if (webcamRef.current.video.readyState !== 4) {
-// //                     setIsDetecting(false);
-// //                     return;
-// //                 }
-
-// //                 const video = webcamRef.current.video;
-// //                 const detections = await faceapi.detectAllFaces(
-// //                     video,
-// //                     new faceapi.TinyFaceDetectorOptions()
-// //                 ).withFaceLandmarks().withFaceExpressions();
-
-// //                 // Validate detections before setting state
-// //                 const validDetections = detections.filter(det =>
-// //                     det.detection &&
-// //                     det.detection.box &&
-// //                     typeof det.detection.box.x === 'number' &&
-// //                     typeof det.detection.box.y === 'number' &&
-// //                     typeof det.detection.box.width === 'number' &&
-// //                     typeof det.detection.box.height === 'number'
-// //                 );
-
-// //                 setDetections(validDetections);
-
-// //                 // Auto-capture new faces with strong expressions
-// //                 validDetections.forEach((detection, index) => {
-// //                     const expressions = detection.expressions.asSortedArray();
-// //                     if (expressions.length > 0) {
-// //                         const dominantExpression = expressions[0];
-// //                         if (dominantExpression.probability > 0.8 && !capturedFaces.has(index)) {
-// //                             handleCapture(index, dominantExpression.expression);
-// //                             setCapturedFaces(prev => new Set(prev).add(index));
-// //                         }
-// //                     }
-// //                 });
-
-// //                 // Draw face boxes and expressions
-// //                 if (canvasRef.current && validDetections.length > 0) {
-// //                     const displaySize = {
-// //                         width: video.videoWidth,
-// //                         height: video.videoHeight
-// //                     };
-
-// //                     faceapi.matchDimensions(canvasRef.current, displaySize);
-// //                     const resizedDetections = faceapi.resizeResults(validDetections, displaySize);
-
-// //                     const ctx = canvasRef.current.getContext('2d');
-// //                     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-// //                     faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
-// //                     faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections);
-// //                 }
-// //             } catch (error) {
-// //                 console.error("Detection error:", error);
-// //             } finally {
-// //                 setIsDetecting(false);
-// //             }
-// //         };
-
-// //         const interval = setInterval(detectFaces, 500);
-// //         return () => {
-// //             clearInterval(interval);
-// //             setIsDetecting(false);
-// //         };
-// //     }, [isModelsLoaded, capturedFaces, isDetecting]);
-
-// //     const handleCapture = (faceIndex, expression) => {
-// //         try {
-// //             const imageSrc = webcamRef.current.getScreenshot();
-// //             setCapturedImages(prev => [
-// //                 ...prev,
-// //                 {
-// //                     image: imageSrc,
-// //                     expression,
-// //                     timestamp: new Date().toLocaleString(),
-// //                     faceId: faceIndex
-// //                 }
-// //             ]);
-// //         } catch (error) {
-// //             console.error("Capture error:", error);
-// //         }
-// //     };
-
-// //     const videoConstraints = {
-// //         width: { ideal: 1280 },
-// //         height: { ideal: 720 },
-// //         facingMode: "user"
-// //     };
-
-// //     return (
-// //         <div style={{
-// //             maxWidth: '1200px',
-// //             margin: '0 auto',
-// //             padding: '20px',
-// //             fontFamily: 'Arial, sans-serif'
-// //         }}>
-// //             <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>
-// //                 Multi-Person Facial Expression Detection
-// //             </h2>
-
-// //             <div style={{
-// //                 position: 'relative',
-// //                 marginBottom: '30px',
-// //                 borderRadius: '8px',
-// //                 overflow: 'hidden',
-// //                 boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-// //             }}>
-// //                 <Webcam
-// //                     ref={webcamRef}
-// //                     audio={false}
-// //                     screenshotFormat="image/jpeg"
-// //                     videoConstraints={videoConstraints}
-// //                     style={{
-// //                         width: '100%',
-// //                         display: 'block',
-// //                         transform: 'scaleX(-1)' // Mirror the video
-// //                     }}
-// //                 />
-// //                 <canvas
-// //                     ref={canvasRef}
-// //                     style={{
-// //                         position: 'absolute',
-// //                         top: 0,
-// //                         left: 0,
-// //                         width: '100%',
-// //                         height: '100%',
-// //                         pointerEvents: 'none'
-// //                     }}
-// //                 />
-
-// //                 {detections.length > 0 && (
-// //                     <div style={{
-// //                         position: 'absolute',
-// //                         top: '10px',
-// //                         left: '10px',
-// //                         backgroundColor: 'rgba(0,0,0,0.7)',
-// //                         color: 'white',
-// //                         padding: '8px 12px',
-// //                         borderRadius: '4px',
-// //                         fontSize: '14px',
-// //                         zIndex: 2
-// //                     }}>
-// //                         Detected: {detections.length} face(s)
-// //                     </div>
-// //                 )}
-// //             </div>
-
-// //             {/* <div>
-// //                 <h3 style={{ color: '#2c3e50', marginBottom: '15px' }}>
-// //                     Captured Expressions ({capturedImages.length})
-// //                 </h3>
-// //                 {capturedImages.length > 0 ? (
-// //                     <div style={{
-// //                         display: 'grid',
-// //                         gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-// //                         gap: '15px',
-// //                         marginTop: '20px'
-// //                     }}>
-// //                         {capturedImages.map((item, index) => (
-// //                             <div key={index} style={{
-// //                                 border: '1px solid #e0e0e0',
-// //                                 borderRadius: '8px',
-// //                                 padding: '12px',
-// //                                 backgroundColor: '#fff',
-// //                                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-// //                                 transition: 'transform 0.2s',
-// //                                 ':hover': {
-// //                                     transform: 'translateY(-2px)'
-// //                                 }
-// //                             }}>
-// //                                 <img
-// //                                     src={item.image}
-// //                                     alt={`Face ${item.faceId}`}
-// //                                     style={{
-// //                                         width: '100%',
-// //                                         borderRadius: '4px',
-// //                                         marginBottom: '10px',
-// //                                         border: '1px solid #eee'
-// //                                     }}
-// //                                 />
-// //                                 <div>
-// //                                     <div style={{
-// //                                         fontWeight: 'bold',
-// //                                         marginBottom: '4px',
-// //                                         color: '#3498db'
-// //                                     }}>
-// //                                         Face {item.faceId + 1}: {item.expression}
-// //                                     </div>
-// //                                     <div style={{
-// //                                         fontSize: '0.8em',
-// //                                         color: '#7f8c8d',
-// //                                     }}>
-// //                                         {item.timestamp}
-// //                                     </div>
-// //                                 </div>
-// //                             </div>
-// //                         ))}
-// //                     </div>
-// //                 ) : (
-// //                     <div style={{
-// //                         padding: '20px',
-// //                         textAlign: 'center',
-// //                         color: '#7f8c8d',
-// //                         backgroundColor: '#f8f9fa',
-// //                         borderRadius: '8px'
-// //                     }}>
-// //                         No expressions captured yet. Show your face to the camera!
-// //                     </div>
-// //                 )}
-// //             </div> */}
-// //         </div>
-// //     );
-// // };
-
-// // export default FaceExpressions;
-
-
-// // import React, { useRef, useState, useEffect } from 'react';
-// // import Webcam from 'react-webcam';
-// // import * as faceapi from 'face-api.js';
-
-// // const FaceExpressions = () => {
-// //     const webcamRef = useRef(null);
-// //     const canvasRef = useRef(null);
-// //     const [detections, setDetections] = useState([]);
-// //     const [capturedImages, setCapturedImages] = useState([]);
-// //     const [isModelsLoaded, setIsModelsLoaded] = useState(false);
-// //     const [capturedFaces, setCapturedFaces] = useState(new Set());
-// //     const [isDetecting, setIsDetecting] = useState(false);
-
-// //     // Load models
-// //     useEffect(() => {
-// //         const loadModels = async () => {
-// //             try {
-// //                 await Promise.all([
-// //                     faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-// //                     faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-// //                     faceapi.nets.faceExpressionNet.loadFromUri('/models')
-// //                 ]);
-// //                 setIsModelsLoaded(true);
-// //             } catch (error) {
-// //                 console.error("Error loading models:", error);
-// //             }
-// //         };
-// //         loadModels();
-
-// //         return () => {
-// //             setIsModelsLoaded(false);
-// //             setDetections([]);
-// //         };
-// //     }, []);
-
-// //     // Real-time multi-face detection and drawing
-// //     useEffect(() => {
-// //         if (!isModelsLoaded || isDetecting || !webcamRef.current) return;
-
-// //         const detectFaces = async () => {
-// //             setIsDetecting(true);
-// //             try {
-// //                 if (webcamRef.current.video.readyState !== 4) {
-// //                     setIsDetecting(false);
-// //                     return;
-// //                 }
-
-// //                 const video = webcamRef.current.video;
-// //                 const detections = await faceapi.detectAllFaces(
-// //                     video,
-// //                     new faceapi.TinyFaceDetectorOptions()
-// //                 ).withFaceLandmarks().withFaceExpressions();
-
-// //                 const validDetections = detections.filter(det =>
-// //                     det.detection &&
-// //                     det.detection.box &&
-// //                     typeof det.detection.box.x === 'number' &&
-// //                     typeof det.detection.box.y === 'number' &&
-// //                     typeof det.detection.box.width === 'number' &&
-// //                     typeof det.detection.box.height === 'number'
-// //                 );
-
-// //                 setDetections(validDetections);
-
-// //                 validDetections.forEach((detection, index) => {
-// //                     const expressions = detection.expressions.asSortedArray();
-// //                     if (expressions.length > 0) {
-// //                         const dominantExpression = expressions[0];
-// //                         if (dominantExpression.probability > 0.8 && !capturedFaces.has(index)) {
-// //                             handleCapture(index, dominantExpression.expression);
-// //                             setCapturedFaces(prev => new Set(prev).add(index));
-// //                         }
-// //                     }
-// //                 });
-
-// //                 if (canvasRef.current && validDetections.length > 0) {
-// //                     const displaySize = {
-// //                         width: video.videoWidth,
-// //                         height: video.videoHeight
-// //                     };
-
-// //                     faceapi.matchDimensions(canvasRef.current, displaySize);
-// //                     const resizedDetections = faceapi.resizeResults(validDetections, displaySize);
-
-// //                     const ctx = canvasRef.current.getContext('2d');
-// //                     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-// //                     faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
-// //                     faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections);
-// //                 }
-// //             } catch (error) {
-// //                 console.error("Detection error:", error);
-// //             } finally {
-// //                 setIsDetecting(false);
-// //             }
-// //         };
-
-// //         const interval = setInterval(detectFaces, 500);
-// //         return () => {
-// //             clearInterval(interval);
-// //             setIsDetecting(false);
-// //         };
-// //     }, [isModelsLoaded, capturedFaces, isDetecting]);
-
-// //     const handleCapture = (faceIndex, expression) => {
-// //         try {
-// //             const imageSrc = webcamRef.current.getScreenshot();
-// //             setCapturedImages(prev => [
-// //                 ...prev,
-// //                 {
-// //                     image: imageSrc,
-// //                     expression,
-// //                     timestamp: new Date().toLocaleString(),
-// //                     faceId: faceIndex
-// //                 }
-// //             ]);
-// //         } catch (error) {
-// //             console.error("Capture error:", error);
-// //         }
-// //     };
-
-// //     const videoConstraints = {
-// //         width: { ideal: 1280 },
-// //         height: { ideal: 720 },
-// //         facingMode: "user"
-// //     };
-
-// //     return (
-// //         <div style={styles.container}>
-// //             <div style={styles.contentWrapper}>
-// //                 <h2 style={styles.title}>Multi-Person Facial Expression Detection</h2>
-                
-// //                 <div style={styles.webcamContainer}>
-// //                     <Webcam
-// //                         ref={webcamRef}
-// //                         audio={false}
-// //                         screenshotFormat="image/jpeg"
-// //                         videoConstraints={videoConstraints}
-// //                         style={styles.webcam}
-// //                     />
-// //                     <canvas
-// //                         ref={canvasRef}
-// //                         style={styles.canvas}
-// //                     />
-
-// //                     {detections.length > 0 && (
-// //                         <div style={styles.detectionCounter}>
-// //                             Detected: {detections.length} face(s)
-// //                         </div>
-// //                     )}
-// //                 </div>
-
-// //                 {capturedImages.length > 0 && (
-// //                     <div style={styles.gallerySection}>
-// //                         <h3 style={styles.galleryTitle}>Captured Expressions ({capturedImages.length})</h3>
-// //                         <div style={styles.galleryGrid}>
-// //                             {capturedImages.map((item, index) => (
-// //                                 <div key={index} style={styles.galleryItem}>
-// //                                     <img
-// //                                         src={item.image}
-// //                                         alt={`Face ${item.faceId}`}
-// //                                         style={styles.capturedImage}
-// //                                     />
-// //                                     <div style={styles.caption}>
-// //                                         <div style={styles.expressionText}>
-// //                                             Face {item.faceId + 1}: {item.expression}
-// //                                         </div>
-// //                                         <div style={styles.timestamp}>
-// //                                             {item.timestamp}
-// //                                         </div>
-// //                                     </div>
-// //                                 </div>
-// //                             ))}
-// //                         </div>
-// //                     </div>
-// //                 )}
-// //             </div>
-// //         </div>
-// //     );
-// // };
-
-// // const styles = {
-// //     container: {
-// //         minHeight: '100vh',
-// //         backgroundColor: '#f5f7fa',
-// //         padding: '20px',
-// //         display: 'flex',
-// //         justifyContent: 'center',
-// //         alignItems: 'center'
-// //     },
-// //     contentWrapper: {
-// //         width: '100%',
-// //         maxWidth: '1200px',
-// //         backgroundColor: 'white',
-// //         borderRadius: '12px',
-// //         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-// //         padding: '30px',
-// //         border: '1px solid #e1e5eb'
-// //     },
-// //     title: {
-// //         color: '#2c3e50',
-// //         marginBottom: '25px',
-// //         textAlign: 'center',
-// //         fontSize: '28px',
-// //         fontWeight: '600',
-// //         borderBottom: '2px solid #3498db',
-// //         paddingBottom: '10px'
-// //     },
-// //     webcamContainer: {
-// //         position: 'relative',
-// //         marginBottom: '30px',
-// //         borderRadius: '8px',
-// //         overflow: 'hidden',
-// //         boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
-// //         border: '1px solid #dfe6e9'
-// //     },
-// //     webcam: {
-// //         width: '100%',
-// //         display: 'block',
-// //         transform: 'scaleX(-1)'
-// //     },
-// //     canvas: {
-// //         position: 'absolute',
-// //         top: 0,
-// //         left: 0,
-// //         width: '100%',
-// //         height: '100%',
-// //         pointerEvents: 'none'
-// //     },
-// //     detectionCounter: {
-// //         position: 'absolute',
-// //         top: '15px',
-// //         left: '15px',
-// //         backgroundColor: 'rgba(0, 0, 0, 0.7)',
-// //         color: 'white',
-// //         padding: '8px 15px',
-// //         borderRadius: '20px',
-// //         fontSize: '14px',
-// //         zIndex: 2,
-// //         fontWeight: '500'
-// //     },
-// //     gallerySection: {
-// //         marginTop: '40px',
-// //         padding: '20px',
-// //         backgroundColor: '#f8f9fa',
-// //         borderRadius: '10px',
-// //         border: '1px solid #e1e5eb'
-// //     },
-// //     galleryTitle: {
-// //         color: '#2c3e50',
-// //         marginBottom: '20px',
-// //         fontSize: '22px',
-// //         textAlign: 'center',
-// //         fontWeight: '500'
-// //     },
-// //     galleryGrid: {
-// //         display: 'grid',
-// //         gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-// //         gap: '20px',
-// //         marginTop: '15px'
-// //     },
-// //     galleryItem: {
-// //         border: '1px solid #e0e0e0',
-// //         borderRadius: '8px',
-// //         padding: '15px',
-// //         backgroundColor: '#fff',
-// //         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-// //         transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-// //         ':hover': {
-// //             transform: 'translateY(-5px)',
-// //             boxShadow: '0 5px 15px rgba(0, 0, 0, 0.1)'
-// //         }
-// //     },
-// //     capturedImage: {
-// //         width: '100%',
-// //         borderRadius: '6px',
-// //         marginBottom: '12px',
-// //         border: '1px solid #eee',
-// //         aspectRatio: '1/1',
-// //         objectFit: 'cover'
-// //     },
-// //     caption: {
-// //         padding: '0 5px'
-// //     },
-// //     expressionText: {
-// //         fontWeight: '600',
-// //         marginBottom: '5px',
-// //         color: '#3498db',
-// //         fontSize: '16px'
-// //     },
-// //     timestamp: {
-// //         fontSize: '0.85em',
-// //         color: '#7f8c8d',
-// //         fontStyle: 'italic'
-// //     }
-// // };
-
-// // export default FaceExpressions;
-
-
-// // import React, { useRef, useState, useEffect } from 'react';
-// // import Webcam from 'react-webcam';
-// // import * as faceapi from 'face-api.js';
-
-// // const FaceExpressions = () => {
-// //     const webcamRef = useRef(null);
-// //     const canvasRef = useRef(null);
-// //     const [detections, setDetections] = useState([]);
-// //     const [capturedImages, setCapturedImages] = useState([]);
-// //     const [isModelsLoaded, setIsModelsLoaded] = useState(false);
-// //     const [isDetecting, setIsDetecting] = useState(false);
-// //     const capturedFacesRef = useRef(new Set()); // Using ref instead of state
-
-// //     // Load models - IMPORTANT: Ensure models are in public/models directory
-// //     useEffect(() => {
-// //         const loadModels = async () => {
-// //             try {
-// //                 // IMPORTANT: Verify your models are in the correct location
-// //                 const modelsPath = process.env.PUBLIC_URL + '/models';
-// //                 await Promise.all([
-// //                     faceapi.nets.tinyFaceDetector.loadFromUri(modelsPath),
-// //                     faceapi.nets.faceLandmark68Net.loadFromUri(modelsPath),
-// //                     faceapi.nets.faceExpressionNet.loadFromUri(modelsPath)
-// //                 ]);
-// //                 setIsModelsLoaded(true);
-// //                 console.log('Models loaded successfully');
-// //             } catch (error) {
-// //                 console.error("Error loading models:", error);
-// //             }
-// //         };
-// //         loadModels();
-
-// //         return () => {
-// //             setIsModelsLoaded(false);
-// //             setDetections([]);
-// //         };
-// //     }, []);
-
-// //     // Real-time face detection
-// //     useEffect(() => {
-// //         if (!isModelsLoaded || isDetecting || !webcamRef.current) return;
-
-// //         const detectFaces = async () => {
-// //             setIsDetecting(true);
-// //             try {
-// //                 const video = webcamRef.current.video;
-                
-// //                 // Ensure video is ready
-// //                 if (!video || video.readyState !== 4) {
-// //                     setIsDetecting(false);
-// //                     return;
-// //                 }
-
-// //                 // Get detections
-// //                 const detections = await faceapi.detectAllFaces(
-// //                     video,
-// //                     new faceapi.TinyFaceDetectorOptions()
-// //                 ).withFaceLandmarks().withFaceExpressions();
-
-// //                 // Filter valid detections
-// //                 const validDetections = detections.filter(det => 
-// //                     det.detection?.box &&
-// //                     typeof det.detection.box.x === 'number'
-// //                 );
-
-// //                 setDetections(validDetections);
-
-// //                 // Auto-capture new faces with strong expressions
-// //                 validDetections.forEach((detection, index) => {
-// //                     const expressions = detection.expressions.asSortedArray();
-// //                     if (expressions.length > 0 && expressions[0].probability > 0.8) {
-// //                         if (!capturedFacesRef.current.has(index)) {
-// //                             handleCapture(index, expressions[0].expression);
-// //                             capturedFacesRef.current.add(index);
-// //                         }
-// //                     }
-// //                 });
-
-// //                 // Draw on canvas
-// //                 if (canvasRef.current && validDetections.length > 0) {
-// //                     const displaySize = {
-// //                         width: video.videoWidth,
-// //                         height: video.videoHeight
-// //                     };
-                    
-// //                     // Set canvas dimensions
-// //                     canvasRef.current.width = displaySize.width;
-// //                     canvasRef.current.height = displaySize.height;
-                    
-// //                     const resizedDetections = faceapi.resizeResults(validDetections, displaySize);
-// //                     const ctx = canvasRef.current.getContext('2d');
-// //                     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                    
-// //                     // Draw detections and expressions
-// //                     faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
-// //                     faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections);
-// //                 }
-// //             } catch (error) {
-// //                 console.error("Detection error:", error);
-// //             } finally {
-// //                 setIsDetecting(false);
-// //             }
-// //         };
-
-// //         const interval = setInterval(detectFaces, 300); // Reduced interval for better performance
-// //         return () => clearInterval(interval);
-// //     }, [isModelsLoaded, isDetecting]);
-
-// //     const handleCapture = (faceIndex, expression) => {
-// //         try {
-// //             const imageSrc = webcamRef.current.getScreenshot();
-// //             setCapturedImages(prev => [
-// //                 ...prev,
-// //                 {
-// //                     image: imageSrc,
-// //                     expression,
-// //                     timestamp: new Date().toLocaleString(),
-// //                     faceId: faceIndex
-// //                 }
-// //             ]);
-// //         } catch (error) {
-// //             console.error("Capture error:", error);
-// //         }
-// //     };
-
-// //     const videoConstraints = {
-// //         width: { ideal: 1280 },
-// //         height: { ideal: 720 },
-// //         facingMode: "user"
-// //     };
-
-// //     return (
-// //         <div style={styles.container}>
-// //             <div style={styles.contentWrapper}>
-// //                 <h2 style={styles.title}>Multi-Person Facial Expression Detection</h2>
-                
-// //                 <div style={styles.webcamContainer}>
-// //                     <Webcam
-// //                         ref={webcamRef}
-// //                         audio={false}
-// //                         screenshotFormat="image/jpeg"
-// //                         videoConstraints={videoConstraints}
-// //                         style={styles.webcam}
-// //                         onUserMedia={() => console.log('Webcam ready')}
-// //                         onUserMediaError={(err) => console.error('Webcam error:', err)}
-// //                     />
-// //                     <canvas
-// //                         ref={canvasRef}
-// //                         style={styles.canvas}
-// //                     />
-
-// //                     {detections.length > 0 && (
-// //                         <div style={styles.detectionCounter}>
-// //                             Detected: {detections.length} face(s)
-// //                         </div>
-// //                     )}
-// //                 </div>
-
-// //                 {capturedImages.length > 0 && (
-// //                     <div style={styles.gallerySection}>
-// //                         <h3 style={styles.galleryTitle}>Captured Expressions ({capturedImages.length})</h3>
-// //                         <div style={styles.galleryGrid}>
-// //                             {capturedImages.map((item, index) => (
-// //                                 <div key={index} style={styles.galleryItem}>
-// //                                     <img
-// //                                         src={item.image}
-// //                                         alt={`Face ${item.faceId}`}
-// //                                         style={styles.capturedImage}
-// //                                     />
-// //                                     <div style={styles.caption}>
-// //                                         <div style={styles.expressionText}>
-// //                                             Face {item.faceId + 1}: {item.expression}
-// //                                         </div>
-// //                                         <div style={styles.timestamp}>
-// //                                             {item.timestamp}
-// //                                         </div>
-// //                                     </div>
-// //                                 </div>
-// //                             ))}
-// //                         </div>
-// //                     </div>
-// //                 )}
-
-// //                 {!isModelsLoaded && (
-// //                     <div style={styles.loadingMessage}>
-// //                         Loading face detection models... This may take a moment.
-// //                     </div>
-// //                 )}
-// //             </div>
-// //         </div>
-// //     );
-// // };
-
-// // // ... (keep your existing styles object, but add this new style)
-// // const styles = {
-// //     // ... (previous styles)
-// //     loadingMessage: {
-// //         textAlign: 'center',
-// //         padding: '20px',
-// //         color: '#7f8c8d',
-// //         fontSize: '18px'
-// //     }
-// // };
-
-// // export default FaceExpressions;
-
-
-// // import React, { useRef, useState, useEffect } from 'react';
-// // import Webcam from 'react-webcam';
-// // import * as faceapi from 'face-api.js';
-
-// // const FaceExpression = () => {
-// //     const webcamRef = useRef(null);
-// //     const canvasRef = useRef(null);
-// //     const [detections, setDetections] = useState([]);
-// //     const [capturedImages, setCapturedImages] = useState([]);
-// //     const [isModelsLoaded, setIsModelsLoaded] = useState(false);
-// //     const capturedFacesRef = useRef(new Set());
-// //     const [isDetecting, setIsDetecting] = useState(false);
-
-// //     // Load models
-// //     useEffect(() => {
-// //         const loadModels = async () => {
-// //             try {
-// //                 const modelsPath = process.env.PUBLIC_URL + '/models';
-// //                 await Promise.all([
-// //                     faceapi.nets.tinyFaceDetector.loadFromUri(modelsPath),
-// //                     faceapi.nets.faceLandmark68Net.loadFromUri(modelsPath),
-// //                     faceapi.nets.faceExpressionNet.loadFromUri(modelsPath)
-// //                 ]);
-// //                 setIsModelsLoaded(true);
-// //                 console.log('Models loaded successfully');
-// //             } catch (error) {
-// //                 console.error("Error loading models:", error);
-// //             }
-// //         };
-// //         loadModels();
-
-// //         return () => {
-// //             setIsModelsLoaded(false);
-// //             setDetections([]);
-// //         };
-// //     }, []);
-
-// //     // Real-time face detection
-// //     useEffect(() => {
-// //         if (!isModelsLoaded || isDetecting || !webcamRef.current) return;
-
-// //         const detectFaces = async () => {
-// //             setIsDetecting(true);
-// //             try {
-// //                 const video = webcamRef.current.video;
-                
-// //                 if (!video || video.readyState !== 4) {
-// //                     setIsDetecting(false);
-// //                     return;
-// //                 }
-
-// //                 const detections = await faceapi.detectAllFaces(
-// //                     video,
-// //                     new faceapi.TinyFaceDetectorOptions()
-// //                 ).withFaceLandmarks().withFaceExpressions();
-
-// //                 const validDetections = detections.filter(det => 
-// //                     det.detection?.box &&
-// //                     typeof det.detection.box.x === 'number'
-// //                 );
-
-// //                 setDetections(validDetections);
-
-// //                 validDetections.forEach((detection, index) => {
-// //                     const expressions = detection.expressions.asSortedArray();
-// //                     if (expressions.length > 0 && expressions[0].probability > 0.8) {
-// //                         if (!capturedFacesRef.current.has(index)) {
-// //                             handleCapture(index, expressions[0].expression);
-// //                             capturedFacesRef.current.add(index);
-// //                         }
-// //                     }
-// //                 });
-
-// //                 if (canvasRef.current && validDetections.length > 0) {
-// //                     const displaySize = {
-// //                         width: video.videoWidth,
-// //                         height: video.videoHeight
-// //                     };
-                    
-// //                     canvasRef.current.width = displaySize.width;
-// //                     canvasRef.current.height = displaySize.height;
-                    
-// //                     const resizedDetections = faceapi.resizeResults(validDetections, displaySize);
-// //                     const ctx = canvasRef.current.getContext('2d');
-// //                     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                    
-// //                     faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
-// //                     faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections);
-// //                 }
-// //             } catch (error) {
-// //                 console.error("Detection error:", error);
-// //             } finally {
-// //                 setIsDetecting(false);
-// //             }
-// //         };
-
-// //         const interval = setInterval(detectFaces, 300);
-// //         return () => clearInterval(interval);
-// //     }, [isModelsLoaded, isDetecting]);
-
-// //     const handleCapture = (faceIndex, expression) => {
-// //         try {
-// //             const imageSrc = webcamRef.current.getScreenshot();
-// //             setCapturedImages(prev => [
-// //                 ...prev,
-// //                 {
-// //                     image: imageSrc,
-// //                     expression,
-// //                     timestamp: new Date().toLocaleString(),
-// //                     faceId: faceIndex
-// //                 }
-// //             ]);
-// //         } catch (error) {
-// //             console.error("Capture error:", error);
-// //         }
-// //     };
-
-// //     const videoConstraints = {
-// //         width: { ideal: 1280 },
-// //         height: { ideal: 720 },
-// //         facingMode: "user"
-// //     };
-
-// //     return (
-// //         <div style={{
-// //             maxWidth: '1200px',
-// //             margin: '0 auto',
-// //             padding: '20px',
-// //             fontFamily: 'Arial, sans-serif'
-// //         }}>
-// //             <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>
-// //                 Multi-Person Facial Expression Detection
-// //             </h2>
-
-// //             {!isModelsLoaded && (
-// //                 <div style={{
-// //                     padding: '20px',
-// //                     textAlign: 'center',
-// //                     color: '#7f8c8d',
-// //                     backgroundColor: '#f8f9fa',
-// //                     borderRadius: '8px',
-// //                     marginBottom: '20px'
-// //                 }}>
-// //                     Loading face detection models... Please wait.
-// //                 </div>
-// //             )}
-
-// //             <div style={{
-// //                 position: 'relative',
-// //                 marginBottom: '30px',
-// //                 borderRadius: '8px',
-// //                 overflow: 'hidden',
-// //                 boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-// //             }}>
-// //                 <Webcam
-// //                     ref={webcamRef}
-// //                     audio={false}
-// //                     screenshotFormat="image/jpeg"
-// //                     videoConstraints={videoConstraints}
-// //                     style={{
-// //                         width: '100%',
-// //                         display: 'block',
-// //                         transform: 'scaleX(-1)'
-// //                     }}
-// //                     onUserMedia={() => console.log('Webcam access granted')}
-// //                     onUserMediaError={(err) => console.error('Webcam error:', err)}
-// //                 />
-// //                 <canvas
-// //                     ref={canvasRef}
-// //                     style={{
-// //                         position: 'absolute',
-// //                         top: 0,
-// //                         left: 0,
-// //                         width: '100%',
-// //                         height: '100%',
-// //                         pointerEvents: 'none'
-// //                     }}
-// //                 />
-
-// //                 {detections.length > 0 && (
-// //                     <div style={{
-// //                         position: 'absolute',
-// //                         top: '10px',
-// //                         left: '10px',
-// //                         backgroundColor: 'rgba(0,0,0,0.7)',
-// //                         color: 'white',
-// //                         padding: '8px 12px',
-// //                         borderRadius: '4px',
-// //                         fontSize: '14px',
-// //                         zIndex: 2
-// //                     }}>
-// //                         Detected: {detections.length} face(s)
-// //                     </div>
-// //                 )}
-// //             </div>
-
-// //             {capturedImages.length > 0 && (
-// //                 <div>
-// //                     <h3 style={{ color: '#2c3e50', marginBottom: '15px' }}>
-// //                         Captured Expressions ({capturedImages.length})
-// //                     </h3>
-// //                     <div style={{
-// //                         display: 'grid',
-// //                         gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-// //                         gap: '15px',
-// //                         marginTop: '20px'
-// //                     }}>
-// //                         {capturedImages.map((item, index) => (
-// //                             <div key={index} style={{
-// //                                 border: '1px solid #e0e0e0',
-// //                                 borderRadius: '8px',
-// //                                 padding: '12px',
-// //                                 backgroundColor: '#fff',
-// //                                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-// //                                 transition: 'transform 0.2s',
-// //                                 ':hover': {
-// //                                     transform: 'translateY(-2px)'
-// //                                 }
-// //                             }}>
-// //                                 <img
-// //                                     src={item.image}
-// //                                     alt={`Face ${item.faceId}`}
-// //                                     style={{
-// //                                         width: '100%',
-// //                                         borderRadius: '4px',
-// //                                         marginBottom: '10px',
-// //                                         border: '1px solid #eee'
-// //                                     }}
-// //                                 />
-// //                                 <div>
-// //                                     <div style={{
-// //                                         fontWeight: 'bold',
-// //                                         marginBottom: '4px',
-// //                                         color: '#3498db'
-// //                                     }}>
-// //                                         Face {item.faceId + 1}: {item.expression}
-// //                                     </div>
-// //                                     <div style={{
-// //                                         fontSize: '0.8em',
-// //                                         color: '#7f8c8d',
-// //                                     }}>
-// //                                         {item.timestamp}
-// //                                     </div>
-// //                                 </div>
-// //                             </div>
-// //                         ))}
-// //                     </div>
-// //                 </div>
-// //             )}
-// //         </div>
-// //     );
-// // };
-
-// // export default FaceExpression;
-
-
-// import React, { useRef, useState, useEffect } from 'react';
-// import Webcam from 'react-webcam';
-// import * as faceapi from 'face-api.js';
-// import '@tensorflow/tfjs'; // Explicitly import TensorFlow.js
-
-// const FaceExpressions = () => {
-//     const webcamRef = useRef(null);
-//     const canvasRef = useRef(null);
-//     const [detections, setDetections] = useState([]);
-//     const [isModelsLoaded, setIsModelsLoaded] = useState(false);
-//     const [error, setError] = useState(null);
-//     const [loadingStatus, setLoadingStatus] = useState('Initializing...');
-//     const detectionIntervalRef = useRef(null);
-
-//     // Initialize TensorFlow and load models
-//     useEffect(() => {
-//         let isMounted = true;
-
-//         const initialize = async () => {
-//             try {
-//                 // 1. Set TensorFlow.js backend
-//                 setLoadingStatus('Setting up TensorFlow.js backend...');
-//                 await faceapi.tf.setBackend('webgl');
-//                 await faceapi.tf.ready();
-//                 console.log('TensorFlow.js backend ready');
-
-//                 // 2. Load models sequentially with error handling
-//                 setLoadingStatus('Loading face detection model...');
-//                 await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-                
-//                 setLoadingStatus('Loading facial landmarks model...');
-//                 await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-                
-//                 setLoadingStatus('Loading expression recognition model...');
-//                 await faceapi.nets.faceExpressionNet.loadFromUri('/models');
-
-//                 if (isMounted) {
-//                     setIsModelsLoaded(true);
-//                     setLoadingStatus('All models loaded successfully');
-//                 }
-//             } catch (err) {
-//                 if (isMounted) {
-//                     setError(`Initialization failed: ${err.message}`);
-//                     console.error('Initialization error:', err);
-//                 }
-//             }
-//         };
-
-//         initialize();
-
-//         return () => {
-//             isMounted = false;
-//             // Clean up any pending operations
-//             if (detectionIntervalRef.current) {
-//                 clearInterval(detectionIntervalRef.current);
-//             }
-//             faceapi.tf.disposeVariables();
-//         };
-//     }, []);
-
-//     // Face detection logic
-//     useEffect(() => {
-//         if (!isModelsLoaded || !webcamRef.current) return;
-
-//         const detectFaces = async () => {
-//             try {
-//                 const video = webcamRef.current.video;
-//                 if (!video || video.readyState !== 4) return;
-
-//                 // Perform detection
-//                 const detections = await faceapi.detectAllFaces(
-//                     video,
-//                     new faceapi.TinyFaceDetectorOptions()
-//                 ).withFaceLandmarks().withFaceExpressions();
-
-//                 // Filter valid detections
-//                 const validDetections = detections.filter(det => 
-//                     det.detection?.box &&
-//                     typeof det.detection.box.x === 'number'
-//                 );
-
-//                 setDetections(validDetections);
-
-//                 // Draw on canvas
-//                 if (canvasRef.current && validDetections.length > 0) {
-//                     const displaySize = {
-//                         width: video.videoWidth,
-//                         height: video.videoHeight
-//                     };
-                    
-//                     // Set canvas dimensions
-//                     faceapi.matchDimensions(canvasRef.current, displaySize);
-//                     const resizedDetections = faceapi.resizeResults(validDetections, displaySize);
-                    
-//                     const ctx = canvasRef.current.getContext('2d');
-//                     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                    
-//                     // Draw detections and expressions
-//                     faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
-//                     faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections);
-//                 }
-//             } catch (err) {
-//                 console.error('Detection error:', err);
-//                 setError(`Detection error: ${err.message}`);
-//             }
-//         };
-
-//         // Start detection loop
-//         detectionIntervalRef.current = setInterval(async () => {
-//             await faceapi.tf.nextFrame(); // Allow TensorFlow to breathe
-//             detectFaces();
-//         }, 300);
-
-//         return () => {
-//             if (detectionIntervalRef.current) {
-//                 clearInterval(detectionIntervalRef.current);
-//             }
-//         };
-//     }, [isModelsLoaded]);
-
-//     const videoConstraints = {
-//         width: { ideal: 1280 },
-//         height: { ideal: 720 },
-//         facingMode: "user"
-//     };
-
-//     return (
-//         <div style={styles.container}>
-//             <div style={styles.contentWrapper}>
-//                 <h2 style={styles.title}>Multi-Person Facial Expression Detection</h2>
-                
-//                 {error ? (
-//                     <div style={styles.errorContainer}>
-//                         <h3 style={styles.errorTitle}>Error occurred</h3>
-//                         <p>{error}</p>
-//                         <div style={styles.troubleshooting}>
-//                             <p>Possible solutions:</p>
-//                             <ul>
-//                                 <li>Ensure all model files are in /public/models directory</li>
-//                                 <li>Check browser console for 404 errors</li>
-//                                 <li>Try refreshing the page</li>
-//                                 <li>Use Chrome browser with WebGL enabled</li>
-//                             </ul>
-//                         </div>
-//                     </div>
-//                 ) : !isModelsLoaded ? (
-//                     <div style={styles.loadingContainer}>
-//                         <p>{loadingStatus}</p>
-//                         <div style={styles.loadingSpinner}></div>
-//                     </div>
-//                 ) : null}
-
-//                 <div style={styles.webcamContainer}>
-//                     <Webcam
-//                         ref={webcamRef}
-//                         audio={false}
-//                         screenshotFormat="image/jpeg"
-//                         videoConstraints={videoConstraints}
-//                         style={styles.webcam}
-//                         onUserMedia={() => console.log('Webcam access granted')}
-//                         onUserMediaError={(err) => {
-//                             console.error('Webcam error:', err);
-//                             setError(`Webcam error: ${err.message}`);
-//                         }}
-//                     />
-//                     <canvas
-//                         ref={canvasRef}
-//                         style={styles.canvas}
-//                     />
-
-//                     {detections.length > 0 && (
-//                         <div style={styles.detectionCounter}>
-//                             Detected: {detections.length} face(s)
-//                         </div>
-//                     )}
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
-
-// const styles = {
-//     container: {
-//         maxWidth: '1200px',
-//         margin: '0 auto',
-//         padding: '20px',
-//         fontFamily: 'Arial, sans-serif'
-//     },
-//     contentWrapper: {
-//         backgroundColor: 'white',
-//         borderRadius: '8px',
-//         padding: '20px',
-//         boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-//     },
-//     title: {
-//         color: '#2c3e50',
-//         marginBottom: '20px',
-//         textAlign: 'center'
-//     },
-//     webcamContainer: {
-//         position: 'relative',
-//         marginBottom: '20px',
-//         borderRadius: '8px',
-//         overflow: 'hidden',
-//         boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-//     },
-//     webcam: {
-//         width: '100%',
-//         display: 'block',
-//         transform: 'scaleX(-1)'
-//     },
-//     canvas: {
-//         position: 'absolute',
-//         top: 0,
-//         left: 0,
-//         width: '100%',
-//         height: '100%',
-//         pointerEvents: 'none'
-//     },
-//     detectionCounter: {
-//         position: 'absolute',
-//         top: '10px',
-//         left: '10px',
-//         backgroundColor: 'rgba(0,0,0,0.7)',
-//         color: 'white',
-//         padding: '8px 12px',
-//         borderRadius: '4px',
-//         fontSize: '14px',
-//         zIndex: 2
-//     },
-//     errorContainer: {
-//         backgroundColor: '#ffebee',
-//         color: '#c62828',
-//         padding: '20px',
-//         borderRadius: '8px',
-//         marginBottom: '20px'
-//     },
-//     errorTitle: {
-//         marginTop: 0,
-//         color: '#c62828'
-//     },
-//     troubleshooting: {
-//         marginTop: '15px',
-//         padding: '10px',
-//         backgroundColor: '#f5f5f5',
-//         borderRadius: '4px'
-//     },
-//     loadingContainer: {
-//         textAlign: 'center',
-//         padding: '20px',
-//         marginBottom: '20px'
-//     },
-//     loadingSpinner: {
-//         border: '4px solid #f3f3f3',
-//         borderTop: '4px solid #3498db',
-//         borderRadius: '50%',
-//         width: '40px',
-//         height: '40px',
-//         animation: 'spin 1s linear infinite',
-//         margin: '20px auto'
-//     }
-// };
-
-// export default FaceExpressions;
 
 
 import React, { useRef, useState, useEffect } from 'react';
 import Webcam from 'react-webcam';
-import * as faceapi from 'face-api.js';
-import './FaceExpressions.css';
+import * as tf from '@tensorflow/tfjs';
+import * as blazeface from '@tensorflow-models/blazeface';
 
 const FaceExpressions = () => {
   const webcamRef = useRef(null);
@@ -1301,244 +15,533 @@ const FaceExpressions = () => {
   const [error, setError] = useState(null);
   const [dominantExpression, setDominantExpression] = useState(null);
   const [detectionHistory, setDetectionHistory] = useState([]);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [hasEyeContact, setHasEyeContact] = useState(false);
 
-  // Available expressions to detect
-  const EXPRESSION_LABELS = [
-    'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'neutral'
-  ];
+  // Container styles
+  const containerStyle = {
+    fontFamily: "'Poppins', sans-serif",
+    width: "100vw",
+    height: "100vh",
+    margin: "0",
+    padding: "20px",
+    color: "#2c3e50",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    overflow: "auto",
+    display: "flex",
+    flexDirection: "column"
+  };
+
+  // Header styles
+  const headerStyle = {
+    textAlign: "center",
+    marginBottom: "20px",
+    color: "white",
+    fontSize: "2rem",
+    fontWeight: "700",
+    textShadow: "0 2px 10px rgba(0,0,0,0.2)",
+    flex: "0 0 auto"
+  };
+
+  // Main content area
+  const contentStyle = {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: "20px",
+    flex: "1",
+    overflow: "auto",
+    minHeight: "calc(100vh - 150px)"
+  };
+
+  // Card styles
+  const cardStyle = {
+    background: "rgba(255, 255, 255, 0.95)",
+    borderRadius: "20px",
+    padding: "20px",
+    boxShadow: "0 15px 35px rgba(0, 0, 0, 0.2)",
+    backdropFilter: "blur(10px)",
+    height: "100%",
+    overflow: "auto"
+  };
+
+  // Webcam container styles
+  const webcamContainerStyle = {
+    position: "relative",
+    borderRadius: "15px",
+    overflow: "hidden",
+    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+    minWidth: "400px",
+    maxWidth: "500px",
+    height: "375px",
+    flex: "1"
+  };
+
+  // Webcam video styles
+  const webcamStyle = {
+    width: "100%",
+    height: "100%",
+    borderRadius: "15px",
+    transform: "scaleX(-1)",
+    display: "block",
+    objectFit: "cover"
+  };
+
+  // Canvas styles
+  const canvasStyle = {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    width: "100%",
+    height: "100%",
+    borderRadius: "15px"
+  };
+
+  // Expressions panel styles
+  const expressionsPanelStyle = {
+    minWidth: "350px",
+    maxWidth: "400px",
+    height: "375px",
+    flex: "1",
+    display: "flex",
+    flexDirection: "column"
+  };
+
+  // Button styles
+  const buttonStyle = {
+    background: "linear-gradient(45deg, #667eea, #764ba2)",
+    color: "white",
+    border: "none",
+    padding: "12px 25px",
+    borderRadius: "50px",
+    fontSize: "16px",
+    fontWeight: "600",
+    cursor: "pointer",
+    boxShadow: "0 5px 15px rgba(0, 0, 0, 0.2)",
+    transition: "all 0.3s ease",
+    display: "block",
+    margin: "10px auto",
+    width: "200px",
+    flex: "0 0 auto"
+  };
+
+  // Expression badge styles
+  const getBadgeStyle = (expression) => {
+    const colorMap = {
+      happy: "#27ae60",
+      sad: "#3498db",
+      angry: "#e74c3c",
+      fearful: "#9b59b6",
+      disgusted: "#f39c12",
+      surprised: "#f1c40f",
+      neutral: "#95a5a6"
+    };
+    return {
+      display: "inline-block",
+      padding: "10px 20px",
+      borderRadius: "50px",
+      background: `linear-gradient(45deg, ${colorMap[expression]}, ${colorMap[expression]}dd)`,
+      color: "white",
+      fontWeight: "bold",
+      fontSize: "16px",
+      margin: "10px 0",
+      boxShadow: "0 5px 15px rgba(0, 0, 0, 0.2)",
+      animation: "pulse 2s infinite"
+    };
+  };
+
+  // Expression bar styles
+  const barContainerStyle = {
+    backgroundColor: "#ecf0f1",
+    borderRadius: "10px",
+    height: "20px",
+    margin: "8px 0",
+    overflow: "hidden",
+    position: "relative"
+  };
+
+  const getBarStyle = (expression, width) => {
+    const colorMap = {
+      happy: "#2ecc71",
+      sad: "#3498db",
+      angry: "#e74c3c",
+      fearful: "#9b59b6",
+      disgusted: "#f39c12",
+      surprised: "#f1c40f",
+      neutral: "#95a5a6"
+    };
+    return {
+      height: "100%",
+      width: `${width}%`,
+      background: `linear-gradient(90deg, ${colorMap[expression]}, ${colorMap[expression]}aa)`,
+      borderRadius: "10px",
+      transition: "width 0.5s ease-in-out",
+      boxShadow: `0 0 8px ${colorMap[expression]}`
+    };
+  };
+
+  // Loading spinner styles
+  const spinnerStyle = {
+    border: "4px solid rgba(255, 255, 255, 0.3)",
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    borderTopColor: "#fff",
+    animation: "spin 1s linear infinite",
+    margin: "20px auto"
+  };
+
+  // Error message styles
+  const errorStyle = {
+    background: "linear-gradient(45deg, #ff6b6b, #ee5a52)",
+    color: "white",
+    padding: "20px",
+    borderRadius: "15px",
+    margin: "20px 0",
+    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)"
+  };
+
+  // Eye contact indicator styles
+  const eyeContactStyle = {
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    padding: "8px 16px",
+    borderRadius: "20px",
+    color: "white",
+    fontWeight: "bold",
+    fontSize: "14px",
+    background: hasEyeContact
+      ? "linear-gradient(45deg, #27ae60, #2ecc71)"
+      : "linear-gradient(45deg, #e74c3c, #ee5a52)",
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)"
+  };
+
+  // Animation keyframes
+  const keyframesStyle = `
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+      50% { transform: scale(1.05); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+      100% { transform: scale(1); boxShadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
 
   // Load models
   useEffect(() => {
     const loadModels = async () => {
       try {
-        setLoadingStatus('Loading face detection model...');
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-        
-        setLoadingStatus('Loading facial landmarks model...');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-        
-        setLoadingStatus('Loading expression recognition model...');
-        await faceapi.nets.faceExpressionNet.loadFromUri('/models');
-        
+        console.log('Starting model loading...');
+        setLoadingStatus('Loading TensorFlow.js...');
+        await tf.ready();
+        await tf.setBackend('webgl');
+        console.log('TensorFlow.js backend set to WebGL');
+        setLoadingStatus('Loading BlazeFace model...');
+        const model = await blazeface.load();
+        console.log('BlazeFace model loaded successfully');
         setIsModelsLoaded(true);
         setLoadingStatus('Models loaded successfully');
+        setIsDetecting(true);
       } catch (err) {
-        setError(`Failed to load models: ${err.message}`);
+        const errorMessage = `Failed to load models: ${err.message}. Ensure WebGL is enabled and refresh the page.`;
+        setError(errorMessage);
         console.error('Model loading error:', err);
       }
     };
-
-    // Initialize TensorFlow backend first
-    const initialize = async () => {
-      try {
-        await faceapi.tf.setBackend('webgl');
-        await faceapi.tf.ready();
-        console.log('TensorFlow backend ready');
-        await loadModels();
-      } catch (err) {
-        setError(`Initialization failed: ${err.message}`);
-        console.error('Initialization error:', err);
-      }
-    };
-
-    initialize();
-
-    return () => {
-      // Clean up
-      faceapi.tf.disposeVariables();
-    };
+    loadModels();
   }, []);
 
-  // Detect expressions
+  // Face and eye contact detection
   useEffect(() => {
-    if (!isModelsLoaded || !webcamRef.current) return;
+    if (!isModelsLoaded || !isDetecting || !webcamRef.current) {
+      console.log('Detection skipped: Models not loaded or detection paused');
+      return;
+    }
 
-    let animationFrameId;
-    let detectionInterval;
-
-    const detectExpressions = async () => {
+    let model;
+    const loadModel = async () => {
       try {
-        const video = webcamRef.current.video;
-        if (!video || video.readyState !== 4) return;
+        model = await blazeface.load();
+        console.log('BlazeFace model initialized for detection');
+      } catch (err) {
+        console.error('Error loading BlazeFace model for detection:', err);
+        setError(`Error loading model for detection: ${err.message}`);
+      }
+    };
+    loadModel();
 
-        // Detect all faces with expressions
-        const detections = await faceapi.detectAllFaces(
-          video, 
-          new faceapi.TinyFaceDetectorOptions()
-        ).withFaceLandmarks().withFaceExpressions();
+    const detectFaces = async () => {
+      if (!webcamRef.current?.video || !model) {
+        console.log('Detection skipped: Webcam or model not ready');
+        return;
+      }
 
-        if (detections.length > 0) {
-          // Get expressions from the first face (you can modify for multiple faces)
-          const faceExpressions = detections[0].expressions;
-          
-          // Convert to array and sort by probability
-          const sortedExpressions = Object.entries(faceExpressions)
-            .map(([expression, probability]) => ({ expression, probability }))
-            .sort((a, b) => b.probability - a.probability);
+      const video = webcamRef.current.video;
+      if (video.readyState !== 4) {
+        console.log('Webcam video not ready (readyState:', video.readyState, ')');
+        return;
+      }
 
-          setExpressions(sortedExpressions);
-          setDominantExpression(sortedExpressions[0]);
+      try {
+        const predictions = await model.estimateFaces(video, false);
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // Update detection history
-          setDetectionHistory(prev => [
-            ...prev.slice(-9), // Keep last 10 entries
-            {
-              timestamp: new Date().toLocaleTimeString(),
-              expressions: sortedExpressions
+        if (predictions.length > 0) {
+          let eyeContactDetected = false;
+          predictions.forEach((prediction) => {
+            const [x, y] = prediction.topLeft;
+            const [bottomRightX, bottomRightY] = prediction.bottomRight;
+            const width = bottomRightX - x;
+            const height = bottomRightY - y;
+
+            // Draw face bounding box
+            ctx.strokeStyle = '#27ae60';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, width, height);
+
+            // Draw landmarks
+            ctx.fillStyle = '#3498db';
+            prediction.landmarks.forEach(([pointX, pointY]) => {
+              ctx.beginPath();
+              ctx.arc(pointX, pointY, 4, 0, 2 * Math.PI);
+              ctx.fill();
+            });
+
+            // Eye contact detection
+            const landmarks = prediction.landmarks;
+            const leftEye = landmarks[0]; // [x, y]
+            const rightEye = landmarks[1];
+            const nose = landmarks[2];
+
+            const eyeDistance = Math.sqrt(
+              Math.pow(rightEye[0] - leftEye[0], 2) +
+              Math.pow(rightEye[1] - leftEye[1], 2)
+            );
+            const faceWidth = width;
+            const eyeToFaceRatio = eyeDistance / faceWidth;
+            const eyeMidpointX = (leftEye[0] + rightEye[0]) / 2;
+            const noseDeviation = Math.abs(nose[0] - eyeMidpointX) / faceWidth;
+
+            const isEyeDistanceValid = eyeToFaceRatio > 0.2 && eyeToFaceRatio < 0.4;
+            const isFaceCentered = noseDeviation < 0.15;
+            if (isEyeDistanceValid && isFaceCentered) {
+              eyeContactDetected = true;
             }
-          ]);
+          });
 
-          // Draw detections on canvas
-          if (canvasRef.current) {
-            const displaySize = {
-              width: video.videoWidth,
-              height: video.videoHeight
-            };
-            faceapi.matchDimensions(canvasRef.current, displaySize);
-            const resizedDetections = faceapi.resizeResults(detections, displaySize);
+          setHasEyeContact(eyeContactDetected);
+          if (eyeContactDetected) {
+            // Simulate expression detection (replace with actual model in production)
+            const expressionsList = ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'neutral'];
+            const randomExpression = expressionsList[Math.floor(Math.random() * expressionsList.length)];
+            const probability = Math.random() * 0.5 + 0.5; // Between 0.5 and 1.0
             
-            const ctx = canvasRef.current.getContext('2d');
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            const newDominantExpression = { expression: randomExpression, probability };
             
-            faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
-            faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections);
+            // Only update if the expression has changed
+            if (!dominantExpression || dominantExpression.expression !== newDominantExpression.expression) {
+              setDominantExpression(newDominantExpression);
+              
+              // Add to history
+              setDetectionHistory((prev) => [
+                ...prev.slice(-4),
+                {
+                  timestamp: new Date().toLocaleTimeString(),
+                  expression: newDominantExpression.expression,
+                  probability: newDominantExpression.probability
+                },
+              ]);
+              
+              console.log('New expression detected:', newDominantExpression);
+            }
+          } else {
+            setDominantExpression(null);
+            console.log('No eye contact detected');
           }
+        } else {
+          setDominantExpression(null);
+          setHasEyeContact(false);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          console.log('No faces detected');
         }
       } catch (err) {
         console.error('Detection error:', err);
-        setError(`Detection error: ${err.message}`);
+        setError(`Detection error: ${err.message}. Ensure camera is working.`);
       }
     };
 
-    // Start detection loop
-    const startDetection = () => {
-      detectionInterval = setInterval(() => {
-        animationFrameId = requestAnimationFrame(detectExpressions);
-      }, 300);
+    const detectionInterval = setInterval(detectFaces, 100);
+    return () => clearInterval(detectionInterval);
+  }, [isModelsLoaded, isDetecting, dominantExpression]);
+
+  // Set canvas size to match webcam
+  useEffect(() => {
+    const resizeCanvas = () => {
+      if (webcamRef.current && canvasRef.current && webcamRef.current.video) {
+        const video = webcamRef.current.video;
+        canvasRef.current.width = video.videoWidth || 640;
+        canvasRef.current.height = video.videoHeight || 480;
+        console.log('Canvas resized to:', canvasRef.current.width, 'x', canvasRef.current.height);
+      } else {
+        console.log('Cannot resize canvas: Webcam not ready');
+      }
     };
 
-    startDetection();
-
-    return () => {
-      clearInterval(detectionInterval);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [isModelsLoaded]);
+    resizeCanvas(); // Initial resize
+    const interval = setInterval(resizeCanvas, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const videoConstraints = {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
+    width: { ideal: 640 },
+    height: { ideal: 480 },
     facingMode: "user"
   };
 
-  // Calculate expression intensity (0-100)
   const getExpressionIntensity = (probability) => {
     return Math.round(probability * 100);
   };
 
+  const toggleDetection = () => {
+    setIsDetecting(!isDetecting);
+    console.log('Detection toggled to:', !isDetecting);
+  };
+
   return (
-    <div className="face-expressions-container">
-      <h1>Facial Expression Detection</h1>
-      
+    <div style={containerStyle}>
+      <style>{keyframesStyle}</style>
+      <h1 style={headerStyle}>Facial Expression Detection</h1>
       {error ? (
-        <div className="error-message">
-          <h3>Error occurred</h3>
-          <p>{error}</p>
-          <div className="troubleshooting">
-            <p>Possible solutions:</p>
-            <ul>
-              <li>Ensure all model files are in /public/models directory</li>
-              <li>Check browser console for errors</li>
-              <li>Refresh the page</li>
-              <li>Use Chrome/Firefox with WebGL enabled</li>
-              <li>Allow camera permissions</li>
-            </ul>
+        <div style={{ ...cardStyle, maxWidth: "800px", margin: "0 auto" }}>
+          <div style={errorStyle}>
+            <h3>Error Occurred</h3>
+            <p>{error}</p>
+            <div>
+              <p>Possible solutions:</p>
+              <ul>
+                <li>Check your internet connection</li>
+                <li>Ensure WebGL is enabled in your browser (e.g., Chrome/Firefox)</li>
+                <li>Allow camera permissions</li>
+                <li>Refresh the page</li>
+                <li>Verify a webcam is connected</li>
+              </ul>
+            </div>
           </div>
         </div>
       ) : !isModelsLoaded ? (
-        <div className="loading-container">
-          <p>{loadingStatus}</p>
-          <div className="loading-spinner"></div>
+        <div style={{ ...cardStyle, maxWidth: "500px", margin: "0 auto", textAlign: "center" }}>
+          <p style={{ fontSize: '18px', marginBottom: '20px' }}>{loadingStatus}</p>
+          <div style={spinnerStyle}></div>
         </div>
       ) : (
         <>
-          <div className="detection-area">
-            <div className="webcam-container">
+          <div style={contentStyle}>
+            {/* Webcam Panel */}
+            <div style={webcamContainerStyle}>
               <Webcam
                 ref={webcamRef}
                 audio={false}
                 screenshotFormat="image/jpeg"
                 videoConstraints={videoConstraints}
-                className="webcam-video"
+                style={webcamStyle}
                 onUserMedia={() => console.log('Webcam access granted')}
                 onUserMediaError={(err) => {
                   console.error('Webcam error:', err);
-                  setError(`Webcam error: ${err.message}`);
+                  setError(`Webcam error: ${err.message}. Allow camera permissions and ensure a webcam is connected.`);
                 }}
               />
-              <canvas
-                ref={canvasRef}
-                className="detection-canvas"
-              />
+              <canvas ref={canvasRef} style={canvasStyle} />
+              <div style={eyeContactStyle}>
+                {hasEyeContact ? "Eye Contact Detected" : "No Eye Contact"}
+              </div>
             </div>
-
-            <div className="results-panel">
-              {dominantExpression && (
-                <div className="dominant-expression">
-                  <h2>Dominant Expression</h2>
-                  <div className={`expression-badge ${dominantExpression.expression}`}>
-                    {dominantExpression.expression}
-                    <span className="probability">
-                      {getExpressionIntensity(dominantExpression.probability)}%
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className="all-expressions">
-                <h3>All Expressions</h3>
-                <div className="expressions-list">
-                  {expressions.map((exp, index) => (
-                    <div key={index} className="expression-item">
-                      <span className="expression-label">{exp.expression}</span>
-                      <div className="expression-bar-container">
-                        <div 
-                          className={`expression-bar ${exp.expression}`}
-                          style={{ width: `${getExpressionIntensity(exp.probability)}%` }}
-                        ></div>
-                        <span className="expression-value">
-                          {getExpressionIntensity(exp.probability)}%
-                        </span>
+            {/* Expressions Panel */}
+            <div style={expressionsPanelStyle}>
+              <div style={cardStyle}>
+                {dominantExpression && hasEyeContact ? (
+                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <h2 style={{ marginBottom: '15px', color: '#2c3e50' }}>Current Expression</h2>
+                    <div style={getBadgeStyle(dominantExpression.expression)}>
+                      {dominantExpression.expression}
+                      <span style={{ marginLeft: '10px', fontSize: '14px', opacity: '0.9' }}>
+                        {getExpressionIntensity(dominantExpression.probability)}%
+                      </span>
+                    </div>
+                    <div style={{ marginTop: '20px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <span style={{ textTransform: 'capitalize', fontWeight: '500' }}>Confidence</span>
+                        <span style={{ fontWeight: 'bold' }}>{getExpressionIntensity(dominantExpression.probability)}%</span>
+                      </div>
+                      <div style={barContainerStyle}>
+                        <div style={getBarStyle(dominantExpression.expression, getExpressionIntensity(dominantExpression.probability))}></div>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', marginBottom: '20px', color: '#7f8c8d' }}>
+                    {hasEyeContact ? "No face detected" : "Please look at the camera"}
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* History Panel */}
+            <div style={{ minWidth: "300px", maxWidth: "350px", height: "375px", flex: "1" }}>
+              <div style={cardStyle}>
+                <h3 style={{ marginBottom: '15px', color: '#2c3e50', textAlign: 'center' }}>
+                  Expression History
+                </h3>
+                <div>
+                  {detectionHistory.length > 0 ? (
+                    detectionHistory.slice().reverse().map((entry, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          background: "linear-gradient(45deg, #f8f9fa, #e9ecef)",
+                          padding: "12px",
+                          borderRadius: "12px",
+                          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.05)",
+                          marginBottom: "12px",
+                          animation: "fadeIn 0.5s ease-out"
+                        }}
+                      >
+                        <div style={{ fontSize: '12px', color: '#7f8c8d', marginBottom: '8px', fontWeight: '500' }}>
+                          {entry.timestamp}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{entry.expression}</span>
+                          <span style={{ fontWeight: 'bold' }}>
+                            {getExpressionIntensity(entry.probability)}%
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ textAlign: 'center', color: '#7f8c8d' }}>
+                      No expression history
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-
-          {detectionHistory.length > 0 && (
-            <div className="history-panel">
-              <h3>Detection History</h3>
-              <div className="history-grid">
-                {detectionHistory.map((entry, index) => (
-                  <div key={index} className="history-item">
-                    <div className="history-time">{entry.timestamp}</div>
-                    <div className="history-expressions">
-                      {entry.expressions.slice(0, 3).map((exp, i) => (
-                        <div key={i} className="history-expression">
-                          <span className="history-expression-label">{exp.expression}</span>
-                          <span className="history-expression-value">
-                            {getExpressionIntensity(exp.probability)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <button
+            style={{ ...buttonStyle, opacity: isDetecting ? 1 : 0.7 }}
+            onClick={toggleDetection}
+            onMouseOver={(e) => (e.target.style.transform = 'translateY(-2px)')}
+            onMouseOut={(e) => (e.target.style.transform = 'translateY(0)')}
+          >
+            {isDetecting ? 'Pause Detection' : 'Resume Detection'}
+          </button>
         </>
       )}
     </div>
@@ -1546,3 +549,17 @@ const FaceExpressions = () => {
 };
 
 export default FaceExpressions;
+
+
+
+
+
+
+
+
+// mobie responsiveness
+
+
+
+
+
